@@ -31,8 +31,6 @@ type ConfigLine struct {
 	Do   string
 	Args []string
 
-	Options map[string]interface{}
-
 	runError   func(cl *ConfigLine, err error)
 	isErrorJob bool
 }
