@@ -48,7 +48,7 @@ func (cl *ConfigLine) Verify() error {
 			return errors.New(`"ping" command must have two arguments: Url, and expected result.`)
 		}
 	case "exec":
-		if len(cl.Args) > 1 {
+		if len(cl.Args) == 0 {
 			return errors.New(`"exec" command must have at least one Args: CMD [ARGS].`)
 		}
 	default:
