@@ -7,12 +7,11 @@ import (
 
 	`errors`
 	`fmt`
-	"os"
-
 	"io/ioutil"
 	`net/http`
-
+	"os"
 	"os/exec"
+	"sync"
 )
 
 type UnknownDoErr struct {
@@ -33,6 +32,9 @@ type ConfigLine struct {
 
 	runError   func(cl *ConfigLine, err error)
 	isErrorJob bool
+
+	sync.Mutex
+	running bool
 }
 
 type AppConfig struct {
@@ -57,7 +59,29 @@ func (cl *ConfigLine) Verify() error {
 	return nil
 }
 
+func (cl *ConfigLine) Running() bool {
+	cl.Lock()
+	rtest := cl.running
+	cl.Unlock()
+
+	return rtest
+}
+
+var alreadyRunningError = errors.New("Task already running.")
+
 func (cl *ConfigLine) Run() {
+	if cl.Running() {
+		cl.runError(cl, alreadyRunningError)
+		return
+	}
+	cl.Lock()
+	cl.running = true
+	cl.Unlock()
+	defer func() {
+		cl.Lock()
+		cl.running = false
+		cl.Unlock()
+	}()
 	switch cl.Do {
 	case "ping":
 		res, err := http.Get(cl.Args[0])
@@ -191,7 +215,7 @@ func main() {
 						}
 					}
 					sch.Start()
-					log.Info("Configuration loaded.")
+					log.Info("v1.1: Configuration loaded.")
 				}
 			}
 		},
